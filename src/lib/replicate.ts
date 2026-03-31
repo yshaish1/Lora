@@ -8,9 +8,24 @@ export async function startTraining(
   zipUrl: string,
   triggerWord: string
 ) {
-  // Fetch the latest version dynamically
-  const model = await replicate.models.get("ostris", "flux-dev-lora-trainer");
-  const latestVersion = model.latest_version?.id;
+  const owner = process.env.REPLICATE_USERNAME || "user";
+  const modelName = "flux-lora-custom";
+  const destination = `${owner}/${modelName}` as `${string}/${string}`;
+
+  // Ensure the destination model exists (create if not)
+  try {
+    await replicate.models.get(owner, modelName);
+  } catch {
+    await replicate.models.create(owner, modelName, {
+      visibility: "private",
+      hardware: "gpu-t4-nano",
+      description: "Custom Flux LoRA model",
+    });
+  }
+
+  // Fetch the latest trainer version
+  const trainerModel = await replicate.models.get("ostris", "flux-dev-lora-trainer");
+  const latestVersion = trainerModel.latest_version?.id;
 
   if (!latestVersion) {
     throw new Error("Could not find latest version of flux-dev-lora-trainer");
@@ -21,7 +36,7 @@ export async function startTraining(
     "flux-dev-lora-trainer",
     latestVersion,
     {
-      destination: `${process.env.REPLICATE_USERNAME || "user"}/flux-lora-custom` as `${string}/${string}`,
+      destination,
       input: {
         input_images: zipUrl,
         trigger_word: triggerWord,
