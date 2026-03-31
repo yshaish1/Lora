@@ -18,7 +18,7 @@ export async function startTraining(
   } catch {
     try {
       await replicate.models.create(owner, modelName, {
-        visibility: "private",
+        visibility: "public",
         hardware: "gpu-t4",
         description: "Custom Flux LoRA model",
       });
