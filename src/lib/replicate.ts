@@ -4,18 +4,22 @@ export const replicate = new Replicate({
   auth: process.env.REPLICATE_API_TOKEN,
 });
 
-const FLUX_LORA_TRAINER = "ostris/flux-dev-lora-trainer";
-const FLUX_LORA_TRAINER_VERSION =
-  "d995297071a44dcb72244e6c19462f9670cb8cd5e1b4e9314d9b22ccc0f1b5b9";
-
 export async function startTraining(
   zipUrl: string,
   triggerWord: string
 ) {
+  // Fetch the latest version dynamically
+  const model = await replicate.models.get("ostris", "flux-dev-lora-trainer");
+  const latestVersion = model.latest_version?.id;
+
+  if (!latestVersion) {
+    throw new Error("Could not find latest version of flux-dev-lora-trainer");
+  }
+
   const training = await replicate.trainings.create(
     "ostris",
     "flux-dev-lora-trainer",
-    FLUX_LORA_TRAINER_VERSION,
+    latestVersion,
     {
       destination: `${process.env.REPLICATE_USERNAME || "user"}/flux-lora-custom` as `${string}/${string}`,
       input: {
