@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { startTraining } from "@/lib/replicate";
+import { startTraining, replicate } from "@/lib/replicate";
 import { createTrainingZip } from "@/lib/zip";
 
 export async function POST(req: Request) {
@@ -43,12 +43,15 @@ export async function POST(req: Request) {
     const imageUrls = photos.map((p) => p.cloudinaryUrl);
     const zipBuffer = await createTrainingZip(imageUrls);
 
-    // Upload ZIP as a data URL for Replicate (they accept base64 data URIs)
-    const zipBase64 = zipBuffer.toString("base64");
-    const zipDataUri = `data:application/zip;base64,${zipBase64}`;
+    // Upload ZIP to Replicate's file hosting
+    const zipFile = new File([zipBuffer], "training-images.zip", {
+      type: "application/zip",
+    });
+    const fileResponse = await replicate.files.create(zipFile);
+    const zipUrl = fileResponse.urls.get;
 
     // Start training on Replicate
-    const training = await startTraining(zipDataUri, triggerWord);
+    const training = await startTraining(zipUrl, triggerWord);
 
     const job = await prisma.trainingJob.create({
       data: {
