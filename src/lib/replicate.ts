@@ -18,7 +18,7 @@ export async function startTraining(
   } catch {
     await replicate.models.create(owner, modelName, {
       visibility: "private",
-      hardware: "gpu-t4-nano",
+      hardware: "gpu-t4",
       description: "Custom Flux LoRA model",
     });
   }
