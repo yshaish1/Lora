@@ -12,15 +12,19 @@ export async function startTraining(
   const modelName = "flux-lora-custom";
   const destination = `${owner}/${modelName}` as `${string}/${string}`;
 
-  // Ensure the destination model exists (create if not)
+  // Ensure the destination model exists (create if not, ignore errors)
   try {
     await replicate.models.get(owner, modelName);
   } catch {
-    await replicate.models.create(owner, modelName, {
-      visibility: "private",
-      hardware: "gpu-t4",
-      description: "Custom Flux LoRA model",
-    });
+    try {
+      await replicate.models.create(owner, modelName, {
+        visibility: "private",
+        hardware: "gpu-t4",
+        description: "Custom Flux LoRA model",
+      });
+    } catch {
+      // Model may already exist or Replicate may have a transient error — proceed anyway
+    }
   }
 
   // Fetch the latest trainer version
